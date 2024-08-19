@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<!-- saved from url=(0045)https://share.umeng.com/demo/ulink/index.html -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"
+    />
+    <link rel="shortcut icon" href="//img.alicdn.com/tfs/TB1cA4QXeuSBuNjy1XcXXcYjFXa-32-32.ico" />
+    <title>ULink</title>
+    <style>
+      body {
+        padding: 0 5%;
+        height: 2000px;
+      }
+      .center-image-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      button,
+      .btn {
+        display: block;
+        margin: 20px auto;
+        width: 100%;
+        height: 80px;
+        background: #3b82fe;
+        border: 0 none;
+        border-radius: 10px;
+        font-size: 30px;
+        color: #fff;
+        text-align: center;
+        line-height: 80px;
+        overflow: hidden;
+      }
+      .section {
+        padding: 10px 0;
+        color: #666;
+      }
+      .section b {
+        color: #3b82fe;
+      }
+      pre {
+        word-wrap: break-word;
+        word-break: break-all;
+        white-space: normal;
+      }
+      .hide {
+        display: none;
+      }
+    </style>
+    <script src="https://g.alicdn.com/code/lib/vConsole/3.3.4/vconsole.min.js">
+      fffffff
+    </script>
+    <script>
+      console.log(new VConsole());
+    </script>
+    <script src="https://g.alicdn.com/jssdk/u-link/index.min.js"></script>
+  </head>
+  <body>
+    <div class="center-image-container">
+      <img src="url.png" alt="url 图片">
+    </div>
+    <div>
+      <button id="btnTest1">安装 App</button>
+    </div>
+    <div class="section">
+      <b>下发方案:</b><br />
+      <pre id="J_solutionBox"></pre>
+    </div>
+    <div class="section">
+      <b>UserAgent:</b><br />
+      <script>
+        document.write(ULink.userAgent);
+      </script>
+    </div>
+    <div class="section">
+      <b>isIOS:</b>
+      <script>
+        document.write(ULink.isIOS());
+      </script>
+    </div>
+    <div class="section">
+      <b>isAndroid:</b>
+      <script>
+        document.write(ULink.isAndroid());
+      </script>
+    </div>
+    <div class="section">
+      <b>oid:</b><br />
+      <pre id="oid"></pre>
+    </div>
+    <div class="section">
+      <b>nextTrackCode:</b><br />
+      <pre id="ntc"></pre>
+    </div>
+    <script>
+      var oid = '';
+      if (localStorage && localStorage.setItem && localStorage.getItem) {
+        oid =
+          localStorage.getItem('_umeng_oid') ||
+          (+new Date()).toString(36) + Math.random().toString(36).substr(2, 6);
+        localStorage.setItem('_umeng_oid', oid);
+      }
+      document.getElementById('oid').innerText = 'umtestid_' + oid;
+      var data = ULink.getUriDecodeParams();
+      var tm = parseInt(data.timeout);
+      var lazy = data.lazy === 'true' ? true : false;
+      if (Object.is(tm, NaN)) {
+        tm = undefined;
+      }
+      var auto = data.auto === 'true' ? true : false;
+      var tip = data.tip;
+      var tipitem;
+      function proxyOpenDownloadfn(defaultAction, cctx) {
+        if (data.popup === 'true') {
+          defaultAction();
+        } else {
+          if (cctx.solution.type === 'scheme') {
+            if (ULink.isWechat || ULink.isQQ) {
+              defaultAction();
+            } else {
+              location.href = cctx.solution.downloadUrl;
+            }
+          }
+        }
+      }
+      if (tip === 'default') {
+        tipitem = tip;
+      } else if (tip === 'function') {
+        tipitem = function (ctx) {
+          return `<div style="position:fixed;left:0;top:0;background:rgba(255,0,255,0.5);width:100%;height:100%;z-index:19910324;">${ctx.solution.downloadUrl}</div>`;
+        };
+      }
+      if (data.env === 'pre') {
+        ULink.setGateway('https://pre-c.umsns.com');
+      }
+      if (data.new === 'true') {
+        console.log(auto, 'auto********');
+        ULink({
+          id: data.linkid || 'usr1560o71d4s5vr',
+          data: data,
+          selector: '#btnTest1',
+          timeout: tm,
+          useOpenInBrowerTips: tipitem || 'default',
+          lazy: lazy,
+          auto: auto,
+          useClipboard: true,
+          proxyOpenDownload: proxyOpenDownloadfn,
+          onready: function (ctx) {
+            console.log('ready', ctx);
+            document.getElementById('J_solutionBox').innerText = JSON.stringify(
+              ctx.solution,
+              null,
+              2,
+            );
+          },
+        });
+      } else {
+        setTimeout(function () {
+          ULink.tracker.setMetaInfo({
+            oid: 'umtestid_' + oid,
+            nickname: '昵称',
+            avator: '头像',
+            trackurl: location.href,
+          });
+          ULink.tracker.enter({ page_name: document.title, page: location.href }, function () {
+            ULink.tracker.getNextTrackCode(function (data) {
+              document.getElementById('ntc').innerText = data;
+              console.log('新的追踪码:', data);
+            });
+            ULink.start({
+              id: data.linkid || 'usr1560o71d4s5vr',
+              data: data,
+              useClipboard: true,
+              useOpenInBrowerTips: tipitem || 'default',
+            }).ready(function (ctx) {
+              console.log('ready', ctx);
+              var option = {
+                action: 'click',
+                proxyOpenDownload: proxyOpenDownloadfn,
+                timeout: tm,
+              };
+              if (auto) {
+                console.log('auto---------', auto);
+                ctx.wakeup(Object.assign({}, option, { action: 'load' }));
+              }
+              document.getElementById('btnTest1').onclick = function (e) {
+                ctx.wakeup(option);
+              };
+              document.getElementById('J_solutionBox').innerText = JSON.stringify(
+                ctx.solution,
+                null,
+                2,
+              );
+            });
+          });
+        }, 500);
+      }
+    </script>
+  </body>
+</html>
